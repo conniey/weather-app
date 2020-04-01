@@ -14,4 +14,7 @@ public interface Aggregator extends AutoCloseable {
     Instant getLastReported();
 
     void onEvent(EventData event);
+
+    @Override
+    void close();
 }
