@@ -1,4 +1,4 @@
-package com.conniey;
+package com.conniey.reporter;
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.messaging.eventhubs.EventData;
@@ -6,6 +6,7 @@ import com.azure.messaging.eventhubs.EventDataBatch;
 import com.azure.messaging.eventhubs.EventHubClientBuilder;
 import com.azure.messaging.eventhubs.EventHubProducerAsyncClient;
 import com.azure.messaging.eventhubs.models.CreateBatchOptions;
+import com.conniey.MeasurementType;
 import com.conniey.models.Humidity;
 import com.conniey.models.ParticleConcentration;
 import com.conniey.models.Temperature;
@@ -18,6 +19,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.conniey.Constants.CONTENT_TYPE;
+import static com.conniey.Constants.JSON;
+import static com.conniey.Constants.MEASUREMENT_TYPE;
+
+/**
+ * Sends telemetry information to Event Hubs.
+ */
 class Reporter implements AutoCloseable {
     private final AtomicReference<EventDataBatch> currentTemperatureBatch;
     private final AtomicReference<EventDataBatch> currentHumidityBatch;
@@ -48,7 +56,9 @@ class Reporter implements AutoCloseable {
     Mono<Void> report(Temperature temperature) {
         return getJson(temperature).map(json -> {
             final EventData event = new EventData(json.getBytes(StandardCharsets.UTF_8));
-            event.getProperties().put(Constants.MEASUREMENT_TYPE, MeasurementType.TEMPERATURE.getValue());
+            event.getProperties().put(MEASUREMENT_TYPE, MeasurementType.TEMPERATURE.getValue());
+            event.getProperties().put(CONTENT_TYPE, JSON);
+
             return event;
         }).flatMap(event -> addToBatch(event, currentTemperatureBatch, temperatureOptions));
     }
@@ -56,7 +66,9 @@ class Reporter implements AutoCloseable {
     Mono<Void> report(Humidity humidity) {
         return getJson(humidity).map(json -> {
             final EventData event = new EventData(json.getBytes(StandardCharsets.UTF_8));
-            event.getProperties().put(Constants.MEASUREMENT_TYPE, MeasurementType.HUMIDITY.getValue());
+            event.getProperties().put(MEASUREMENT_TYPE, MeasurementType.HUMIDITY.getValue());
+            event.getProperties().put(CONTENT_TYPE, JSON);
+
             return event;
         }).flatMap(event -> addToBatch(event, currentHumidityBatch, humidityOptions));
     }
@@ -64,7 +76,9 @@ class Reporter implements AutoCloseable {
     Mono<Void> report(ParticleConcentration co2) {
         return getJson(co2).map(json -> {
             final EventData event = new EventData(json.getBytes(StandardCharsets.UTF_8));
-            event.getProperties().put(Constants.MEASUREMENT_TYPE, MeasurementType.CO2.getValue());
+            event.getProperties().put(MEASUREMENT_TYPE, MeasurementType.CO2.getValue());
+            event.getProperties().put(CONTENT_TYPE, JSON);
+
             return event;
         }).flatMap(event -> addToBatch(event, currentCO2Batch, co2Options));
     }

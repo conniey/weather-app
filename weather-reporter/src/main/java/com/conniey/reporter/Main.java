@@ -1,4 +1,4 @@
-package com.conniey;
+package com.conniey.reporter;
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.identity.DefaultAzureCredentialBuilder;
@@ -61,7 +61,5 @@ public class Main {
 
         subscription.dispose();
         reporter.close();
-
-        // Blocking so that the program does not end before we are done.
     }
 }

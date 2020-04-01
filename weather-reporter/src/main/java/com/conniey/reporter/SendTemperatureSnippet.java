@@ -1,8 +1,11 @@
-package com.conniey;
+package com.conniey.reporter;
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.identity.DefaultAzureCredentialBuilder;
-import com.azure.messaging.eventhubs.*;
+import com.azure.messaging.eventhubs.EventData;
+import com.azure.messaging.eventhubs.EventDataBatch;
+import com.azure.messaging.eventhubs.EventHubClientBuilder;
+import com.azure.messaging.eventhubs.EventHubProducerClient;
 import com.azure.messaging.eventhubs.models.CreateBatchOptions;
 import com.conniey.models.Temperature;
 import com.conniey.models.TemperatureUnit;
@@ -10,7 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Random;
 
-public class Samples {
+class SendTemperatureSnippet {
     private void sendTemperature(String fullyQualifiedNamespace, String eventHubName) throws Exception {
         Random random = new Random();
         ObjectMapper serializer = new ObjectMapper();
