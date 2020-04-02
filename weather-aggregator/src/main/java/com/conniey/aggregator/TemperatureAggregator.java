@@ -1,6 +1,7 @@
 package com.conniey.aggregator;
 
 import com.azure.messaging.eventhubs.EventData;
+import com.azure.messaging.eventhubs.models.EventContext;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.conniey.models.Temperature;
@@ -15,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Processes temperature events as they come from Event Hub
@@ -22,8 +24,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TemperatureAggregator implements Aggregator {
     static final int NUMBER_TO_RETAIN = 20;
 
+    private static final int CHECKPOINT_NUMBER = 10;
     private static final String BLOB_NAME = "temperature";
 
+    private final AtomicReference<EventContext> lastEvent = new AtomicReference<>();
     private final AtomicBoolean isDisposed = new AtomicBoolean();
     private final ObjectMapper serializer;
     private final Double[] lastMeasurements;
@@ -33,6 +37,7 @@ public class TemperatureAggregator implements Aggregator {
     private Instant lastReported = Instant.EPOCH;
     private double minTemperature = Double.MAX_VALUE;
     private double maxTemperature = Double.MIN_VALUE;
+    private long numberProcessed = 0;
 
     public TemperatureAggregator(ObjectMapper serializer, BlobContainerClient containerClient) {
         this.serializer = serializer;
@@ -94,7 +99,8 @@ public class TemperatureAggregator implements Aggregator {
     }
 
     @Override
-    public void onEvent(EventData data) {
+    public void onEvent(EventContext context) {
+        final EventData data = context.getEventData();
         final Instant enqueuedTime = data.getEnqueuedTime();
         if (enqueuedTime.isAfter(lastReported)) {
             lastReported = enqueuedTime;
@@ -124,6 +130,13 @@ public class TemperatureAggregator implements Aggregator {
         lastMeasurements[index] = value;
 
         currentIndex++;
+
+        lastEvent.set(context);
+
+        long processed = numberProcessed++;
+        if ((processed % CHECKPOINT_NUMBER) == 0) {
+            context.updateCheckpoint();
+        }
     }
 
     @Override
@@ -132,11 +145,15 @@ public class TemperatureAggregator implements Aggregator {
             return;
         }
 
+        final EventContext lastEventContext = lastEvent.get();
+        if (lastEventContext != null) {
+            lastEventContext.updateCheckpoint();
+        }
+
         // persist current aggregated information to blob storage so another
         // processor can take over.
         final Statistics statistics = new Statistics(minTemperature, maxTemperature,
                 Arrays.copyOf(lastMeasurements, lastMeasurements.length), lastReported);
-
 
         final String json;
         try {

@@ -1,6 +1,6 @@
 package com.conniey.aggregator;
 
-import com.azure.messaging.eventhubs.EventData;
+import com.azure.messaging.eventhubs.models.EventContext;
 
 import java.time.Instant;
 
@@ -13,7 +13,7 @@ public interface Aggregator extends AutoCloseable {
 
     Instant getLastReported();
 
-    void onEvent(EventData event);
+    void onEvent(EventContext event);
 
     @Override
     void close();
