@@ -51,7 +51,7 @@ public class Main {
                     Aggregator aggregator = currentlyProcessing.computeIfAbsent(partitionId,
                             key -> createAggregator(partitionId, statisticsContainer));
 
-                    aggregator.onEvent(context.getEventData());
+                    aggregator.onEvent(context);
                 })
                 .processError(context -> {
                     final String partitionId = context.getPartitionContext().getPartitionId();
@@ -85,7 +85,7 @@ public class Main {
     private static Aggregator createAggregator(String partitionId, BlobContainerClient containerClient) {
         switch (partitionId) {
             case "0":
-                return new TemperatureAggregator(serializer, containerClient);
+                return new TemperatureAggregator(containerClient, serializer);
             case "1":
                 throw new RuntimeException("Not implemented.");
             case "2":

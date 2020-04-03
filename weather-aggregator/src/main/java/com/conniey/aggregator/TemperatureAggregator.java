@@ -39,7 +39,7 @@ public class TemperatureAggregator implements Aggregator {
     private double maxTemperature = Double.MIN_VALUE;
     private long numberProcessed = 0;
 
-    public TemperatureAggregator(ObjectMapper serializer, BlobContainerClient containerClient) {
+    public TemperatureAggregator(BlobContainerClient containerClient, ObjectMapper serializer) {
         this.serializer = serializer;
         this.blobClient = containerClient.getBlobClient(BLOB_NAME);
 
